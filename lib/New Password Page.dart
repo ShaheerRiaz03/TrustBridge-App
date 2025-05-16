@@ -22,7 +22,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
           Row(mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("Setup new Password",textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 30,),),
+                style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 30,),),//gfhgh
             ],
           ),SizedBox(height: 10,),
           Text("Please, setup a new password for \n your account",textAlign: TextAlign.center,
