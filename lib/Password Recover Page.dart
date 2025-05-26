@@ -1,3 +1,4 @@
+import 'package:course_project/New%20Password%20Page.dart';
 import 'package:flutter/material.dart';
 
 class PasswordRecoverPage extends StatefulWidget {
@@ -46,7 +47,11 @@ class _PasswordRecoverPageState extends State<PasswordRecoverPage> {
             ),
           ),
           SizedBox(height: 120,),
-          InkWell(onTap: (){},
+          InkWell(onTap: (){
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NewPasswordPage()),
+            );          },
             splashColor: Colors.grey.shade400,
             child: Container(height: 60,width: 350,padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -60,7 +65,9 @@ class _PasswordRecoverPageState extends State<PasswordRecoverPage> {
                 ],
               ),),
           ),
-          InkWell(onTap: (){},
+          InkWell(onTap: (){
+            Navigator.pop(context);
+          },
             splashColor: Colors.white24,
             child: Container(height: 60,width: 350,padding: EdgeInsets.all(16),
               decoration: BoxDecoration(

@@ -1,4 +1,6 @@
+import 'package:course_project/Log%20in%20Page.dart';
 import 'package:course_project/Password%20Recover%20Page.dart';
+import 'package:course_project/Sign%20Up%20Page.dart';
 import 'package:flutter/material.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -20,7 +22,8 @@ class _WelcomePageState extends State<WelcomePage> {
           Row(mainAxisAlignment: MainAxisAlignment.center,
             children: [SizedBox(height: 30,),
               CircleAvatar(
-                radius: 80,
+                radius: 100,
+                backgroundImage: AssetImage('assets/images/Logo.png'),
                 backgroundColor: Colors.grey,
 
               ),
@@ -33,11 +36,13 @@ class _WelcomePageState extends State<WelcomePage> {
           Text("Building Trust,\n One Transaction at a Time.",textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black,fontSize: 20,fontWeight: FontWeight.w100),)
               ,SizedBox(height: 100,),
-          InkWell(onTap: (){},
+          InkWell(onTap: (){
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>Createacc()));
+          },
             splashColor: Colors.grey.shade400,
             child: Container(height: 60,width: 350,padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.black38,
+                color: Colors.blueAccent,
                 shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -53,10 +58,12 @@ class _WelcomePageState extends State<WelcomePage> {
               Text("Already have an account?"),
               SizedBox(width: 15,),
               Ink(decoration: const ShapeDecoration(
-                color: Colors.grey,
+                color: Colors.blueAccent,
                 shape: CircleBorder(),
               ),
-                child: IconButton(onPressed: (){},
+                child: IconButton(onPressed: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>Login()));
+                },
                     icon: Icon(Icons.arrow_forward_rounded,
                       )),
               )

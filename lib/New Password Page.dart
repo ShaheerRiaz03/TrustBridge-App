@@ -80,7 +80,9 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                 ],
               ),),
           ),
-          InkWell(onTap: (){},
+          InkWell(onTap: (){
+            Navigator.pop(context);
+          },
             splashColor: Colors.white24,
             child: Container(height: 60,width: 350,padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
