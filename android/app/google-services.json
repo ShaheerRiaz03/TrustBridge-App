@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "257359271472",
+    "project_id": "trust-bridge-app-94bce",
+    "storage_bucket": "trust-bridge-app-94bce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257359271472:android:28a832e6b2a63f4aed3ff5",
+        "android_client_info": {
+          "package_name": "com.example.course_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjeAu9lCcjT_8lmyjwEy2IxBR2tgzbB5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
