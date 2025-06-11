@@ -1,5 +1,7 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+import 'package:course_project/Compound%20Materials/Compound%20Button.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -16,9 +18,11 @@ class _ProfilePageState extends State<ProfilePage> {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.ref();
   final _nameController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+
   bool _isEditing = false;
+  XFile? _image;
   String? _base64Image;
-  File? _selectedImage;
 
   @override
   void initState() {
@@ -34,21 +38,18 @@ class _ProfilePageState extends State<ProfilePage> {
     if (snapshot.exists) {
       final data = snapshot.value as Map;
       _nameController.text = data['name'] ?? '';
-      setState(() {
-        _base64Image = data['imageBase64'];
-      });
+      _base64Image = data['imageBase64'];
+      setState(() {});
     }
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final imageFile = File(picked.path);
-      final bytes = await imageFile.readAsBytes();
+    final result = await _picker.pickImage(source: ImageSource.gallery);
+    if (result != null) {
+      final bytes = await result.readAsBytes();
       setState(() {
+        _image = result;
         _base64Image = base64Encode(bytes);
-        _selectedImage = imageFile;
       });
     }
   }
@@ -57,9 +58,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
-    await _db.child('users/$uid').set({
+    await _db.child('users/$uid').update({
       'name': _nameController.text.trim(),
-      'imageBase64': _base64Image ?? '',
+      if (_base64Image != null) 'ProfilePic': _base64Image,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -69,21 +70,27 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isEditing = false);
   }
 
+
   void _toggleEdit() {
     setState(() {
       _isEditing = !_isEditing;
     });
   }
 
-  ImageProvider _getProfileImage() {
-    if (_selectedImage != null) {
-      return FileImage(_selectedImage!);
+  ImageProvider? _getProfileImage() {
+    if (_image != null) {
+      return kIsWeb
+          ? NetworkImage(_image!.path)
+          : FileImage(File(_image!.path)) as ImageProvider;
     } else if (_base64Image != null && _base64Image!.isNotEmpty) {
-      final bytes = base64Decode(_base64Image!);
-      return MemoryImage(bytes);
-    } else {
-      return const AssetImage("assets/default_avatar.png");
+      try {
+        final bytes = base64Decode(_base64Image!);
+        return MemoryImage(bytes);
+      } catch (e) {
+        debugPrint('❌ Error decoding image: $e');
+      }
     }
+    return const AssetImage("assets/default_avatar.png");
   }
 
   @override
@@ -91,13 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile"),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveProfile,
-          )
-        ],
+        backgroundColor: Colors.blueAccent,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -109,51 +110,71 @@ class _ProfilePageState extends State<ProfilePage> {
                 alignment: Alignment.bottomRight,
                 children: [
                   CircleAvatar(
-                    radius: 70,
+                    radius: 55,
+                    backgroundColor: Colors.grey[300],
                     backgroundImage: _getProfileImage(),
+                    child: (_getProfileImage() == null)
+                        ? const Icon(Icons.person, size: 50,
+                        color: Colors.white)
+                        : null,
                   ),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
-                      color: Colors.deepPurple,
+                      color: Colors.blueAccent,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white),
+                    child: const Icon(Icons.edit, color: Colors.white),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 30),
-            TextField(
-              controller: _nameController,
-              enabled: _isEditing,
-              style: const TextStyle(fontSize: 18),
-              decoration: InputDecoration(
-                labelText: "Name",
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.edit),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _nameController,
+                    enabled: _isEditing,
+                    style: const TextStyle(fontSize: 18),
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.deepPurple),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  icon: const Icon(Icons.edit,
+                      color: Colors.blueAccent),
                   onPressed: _toggleEdit,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.deepPurple),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
+              ],
             ),
             const SizedBox(height: 30),
             ListTile(
-              leading: const Icon(Icons.email, color: Colors.deepPurple),
+              leading: const Icon(Icons.email,
+                  color: Colors.blueAccent),
               title: Text(_auth.currentUser?.email ?? 'No Email'),
               subtitle: const Text("Email"),
             ),
             ListTile(
-              leading: const Icon(Icons.verified_user, color: Colors.deepPurple),
+              leading: const Icon(Icons.verified_user,
+                  color: Colors.blueAccent),
               title: Text(_auth.currentUser?.uid ?? 'Unknown UID'),
               subtitle: const Text("User ID"),
             ),
+            const SizedBox(height: 250),
+            custombutton(
+                text: "Save Changes",
+                onpressed: _saveProfile
+            )
           ],
         ),
       ),

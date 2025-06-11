@@ -2,6 +2,8 @@ import 'package:course_project/Authentication%20Class.dart';
 import 'package:course_project/Bottom%20Navigation%20Bar%20page.dart';
 import 'package:course_project/Compound%20Materials/Compound%20Color.dart';
 import 'package:course_project/Log%20in%20Page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 class Createacc extends StatefulWidget {
@@ -152,19 +154,44 @@ class _CreateaccState extends State<Createacc> {
                           );
                           return;
                         }
-                      
+
+                        final username = name.text.trim();
+                        final dbRef = FirebaseDatabase.instance.ref().child("users");
+
+                        final snapshot = await dbRef.orderByChild("username").equalTo(username).once();
+
+                        if (snapshot.snapshot.exists) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Username already exists")),
+                          );
+                          return;
+                        }
+
                         String? error = await AuthService().signUp(name.text, email.text, pass.text);
+
                         if (error != null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(error)),
                           );
                         } else {
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user != null) {
+                            final userRef = dbRef.child(user.uid);
+                            await userRef.set({
+                              "uid": user.uid,
+                              "name": name,
+                              "email": email.text.trim(),
+                              "password": pass.text.trim(),
+                            });
+                          }
+
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => Login()),
                           );
                         }
                       },
+
                       splashColor: Appcolors.Splash,
                       borderRadius: BorderRadius.circular(10),
                       child: Ink(

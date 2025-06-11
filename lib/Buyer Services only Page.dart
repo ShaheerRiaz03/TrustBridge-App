@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:course_project/Buyer%20Services%20Details%20page.dart';
-import 'package:course_project/Buyer%20Services%20only%20Page.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
@@ -12,124 +9,91 @@ class FreelanceBuyerPage extends StatefulWidget {
 
 class _FreelanceBuyerPageState extends State<FreelanceBuyerPage> {
   final databaseref = FirebaseDatabase.instance.ref('Service');
-
   List<Map<String, dynamic>> services = [];
-
+  bool isLoading = true;
+  String error = '';
 
   @override
   void initState() {
     super.initState();
     fetchServices();
   }
+
   void fetchServices() async {
-    final snapshot = await databaseref.get();
-    if (snapshot.exists) {
-      final data = Map<String, dynamic>.from(snapshot.value as Map);
+    try {
+      final snapshot = await databaseref.get();
+      if (snapshot.exists) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        final List<Map<String, dynamic>> loadedServices = [];
 
-      final List<Map<String, dynamic>> loadedServices = [];
-
-      data.forEach((key, value) {
-        final serviceData = Map<String, dynamic>.from(value);
-        loadedServices.add({
-          'title': serviceData['category'] ?? 'No Title',
-          'price': serviceData['servicePrice'] ?? 0,
-          'seller': serviceData['name'] ?? 'Unknown',
-          'verified': true, // You can change this if your DB has a field for it
-          'description': serviceData['description'] ?? '',
+        data.forEach((key, value) {
+          final serviceData = Map<String, dynamic>.from(value);
+          loadedServices.add({
+            'title': serviceData['category'] ?? 'No Title',
+            'price': serviceData['servicePrice'] ?? 0,
+            'seller': serviceData['name'] ?? 'Unknown',
+            'verified': true, // Change if needed
+            'description': serviceData['description'] ?? '',
+          });
         });
-      });
 
+        setState(() {
+          services = loadedServices;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'No services available.';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        services = loadedServices;
+        error = 'Something went wrong.';
+        isLoading = false;
       });
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Services', style: TextStyle(color: Colors.black)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 1,
+        iconTheme: IconThemeData(color: Colors.black),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Column(
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : error.isNotEmpty
+            ? Center(child: Text(error, style: TextStyle(fontSize: 16)))
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Available Services",
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Expanded(
-              child: services.isEmpty
-                  ? Center(child: Text("No Services Yet"))
-                  : GridView.builder(
+              child: GridView.builder(
                 itemCount: services.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.70,
                 ),
                 itemBuilder: (context, index) {
-                  final service = services[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ServiceDetailPage(service: service),
-                        ),
-                      );
-                    },
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 80),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              service['title'],
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            SizedBox(height: 5),
-                            Text("PKR ${service['price']}",
-                                style: TextStyle(color: Colors.green)),
-                            SizedBox(height: 10),
-                            Text(
-                              service['description'],
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 13),
-                            ),
-                            Spacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  service['seller'],
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey[700]),
-                                ),
-                                if (service['verified'] == true)
-                                  Icon(Icons.verified,
-                                      color: Colors.blue, size: 16),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildServiceCard(services[index]);
                 },
               ),
             ),
@@ -138,4 +102,68 @@ class _FreelanceBuyerPageState extends State<FreelanceBuyerPage> {
       ),
     );
   }
-}
+
+  Widget _buildServiceCard(Map<String, dynamic> service) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceDetailPage(service: service),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Replace icon with image if needed
+              Center(
+                child: Icon(Icons.design_services,
+                    size: 40, color: Colors.blueGrey),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                service['title'],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text("PKR ${service['price']}",
+                  style: const TextStyle(color: Colors.green)),
+              const SizedBox(height: 6),
+              Text(
+                service['description'],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      service['seller'],
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (service['verified'])
+                    const Icon(Icons.verified, color: Colors.blue, size: 16),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }}

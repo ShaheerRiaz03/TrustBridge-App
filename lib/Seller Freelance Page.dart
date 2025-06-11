@@ -1,4 +1,5 @@
 import 'package:course_project/Seller%20Add%20Services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
@@ -11,17 +12,23 @@ class ServicesEditPage extends StatefulWidget {
 }
 
 class _ServicesEditPageState extends State<ServicesEditPage> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child('Service');
+  late DatabaseReference _dbRef;
   List<Service> _products = [];
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _dbRef = FirebaseDatabase.instance.ref().child('Service').child(user.uid);
+      _loadProducts();
+    } else {
+      // Handle user not logged in if needed
+    }
   }
 
-  void deleteEntry(String uid) {
-    _dbRef.child(uid).remove().then((_) {
+  void deleteEntry(String serviceId) {
+    _dbRef.child(serviceId).remove().then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Service Deleted')),
       );
@@ -39,7 +46,7 @@ class _ServicesEditPageState extends State<ServicesEditPage> {
         final List<Service> loadedProducts = [];
         data.forEach((key, value) {
           final productMap = Map<String, dynamic>.from(value);
-          productMap['Sid'] = key; // Set Pid
+          productMap['Sid'] = key; // Set service ID
           loadedProducts.add(Service.fromMap(productMap));
         });
 
@@ -53,7 +60,6 @@ class _ServicesEditPageState extends State<ServicesEditPage> {
       }
     });
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

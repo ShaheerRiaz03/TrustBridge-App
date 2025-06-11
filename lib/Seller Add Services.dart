@@ -1,37 +1,48 @@
 import 'package:course_project/Compound%20Materials/Compound%20Button.dart';
 import 'package:course_project/Seller%20Freelance%20Page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 
-
 class ServiceEntryPage extends StatefulWidget {
   final Service? product;
-  const ServiceEntryPage({super.key, this.product});
+
+  const ServiceEntryPage({Key? key, this.product}) : super(key: key);
 
   @override
-  State<ServiceEntryPage> createState() => _ProductEntryPageState();
+  _ServiceEntryPageState createState() => _ServiceEntryPageState();
 }
 
-class _ProductEntryPageState extends State<ServiceEntryPage> {
+class _ServiceEntryPageState extends State<ServiceEntryPage> {
   @override
   void initState() {
     super.initState();
     if (widget.product != null) {
-      _PidController.text = widget.product!.Sid;
       _nameController.text = widget.product!.name;
       _descController.text = widget.product!.description;
-      _servicePriceController.text = widget.product!.servicePrice.toString();
+      _priceController.text = widget.product!.servicePrice.toString();
       _selectedCategory = widget.product!.category;
-
     }
   }
 
   Future<void> _saveProduct() async {
-    final dbRef = FirebaseDatabase.instance.ref().child('Service');
-    final productId = widget.product?.Sid ?? dbRef.push().key!;  // If no product, create a new key.
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User not logged in')),
+      );
+      return;
+    }
+
+    final uid = user.uid;
+    final dbRef = FirebaseDatabase.instance.ref().child('Service').child(uid);
+    final productId = widget.product?.Sid ?? dbRef.push().key!;
+
     final product = Service(
+      uid: uid,
       Sid: productId,
       name: _nameController.text,
       description: _descController.text,
@@ -63,8 +74,11 @@ class _ProductEntryPageState extends State<ServiceEntryPage> {
   final TextEditingController _PidController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
-
   final TextEditingController _servicePriceController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+
+
+
 
 
   String? _selectedCategory;
@@ -153,7 +167,7 @@ class _ProductEntryPageState extends State<ServiceEntryPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 250),
+                  SizedBox(height: 120),
                   custombutton(
                     text: "Submit Services",
                     onpressed: _saveProduct,),
@@ -170,13 +184,13 @@ class _ProductEntryPageState extends State<ServiceEntryPage> {
     );
   }
 }
-
 class Service {
   String name;
   String description;
   String category;
-  double servicePrice; // Will remain in model, but always null
+  double servicePrice;
   String Sid;
+  String? uid;
 
   Service({
     required this.Sid,
@@ -184,15 +198,17 @@ class Service {
     required this.description,
     required this.category,
     required this.servicePrice,
+    this.uid,
   });
 
   Map<String, dynamic> toMap() {
     return {
+      'Sid': Sid,
       'name': name,
       'description': description,
       'category': category,
       'servicePrice': servicePrice,
-      'Sid': Sid,
+      'uid': uid,
     };
   }
 
@@ -205,6 +221,7 @@ class Service {
       servicePrice: (map['servicePrice'] is int)
           ? (map['servicePrice'] as int).toDouble()
           : (map['servicePrice'] ?? 0.0),
+      uid: map['uid'],
     );
   }
 }

@@ -1,6 +1,6 @@
-import 'package:course_project/Chat%20Page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'Chat Page.dart'; // Update if needed
 
 class ChatContactsScreen extends StatelessWidget {
   final String currentUserId;
@@ -10,58 +10,49 @@ class ChatContactsScreen extends StatelessWidget {
   final DatabaseReference _userChatsRef = FirebaseDatabase.instance.ref('userChats');
   final DatabaseReference _usersRef = FirebaseDatabase.instance.ref('users');
 
-  // Fetch user name using UID
-  Future<String> fetchUserName(String uid) async {
-    final snapshot = await _usersRef.child(uid).child('name').get();
+  Future<String> getLastMessage(String otherUserId) async {
+    final snapshot = await _userChatsRef.child(currentUserId).child(otherUserId).child('lastMessage').get();
     if (snapshot.exists) {
       return snapshot.value.toString();
     } else {
-      return uid; // fallback if name not found
+      return "No messages yet";
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Chats"),
-        automaticallyImplyLeading: false,
-      ),
+      appBar: AppBar(title: Text("Chats"), automaticallyImplyLeading: false),
       body: StreamBuilder(
-        stream: _userChatsRef.child(currentUserId).orderByChild('timestamp').onValue,
+        stream: _usersRef.onValue,
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
             Map data = snapshot.data!.snapshot.value as Map;
-            List<MapEntry> entries = data.entries.toList();
-
-            // Sort by latest message timestamp
-            entries.sort((a, b) {
-              int tsA = (a.value['timestamp'] ?? 0);
-              int tsB = (b.value['timestamp'] ?? 0);
-              return tsB.compareTo(tsA);
-            });
+            data.remove(currentUserId); // remove current user
+            final entries = data.entries.toList();
 
             return ListView.separated(
               itemCount: entries.length,
               separatorBuilder: (context, index) => Divider(height: 1, thickness: 0.5),
               itemBuilder: (context, index) {
-                final contactId = entries[index].key;
-                final chatInfo = entries[index].value;
-                final lastMessage = chatInfo['lastMessage'] ?? "";
+                final userId = entries[index].key;
+                final userInfo = entries[index].value;
+                final name = userInfo['name'] ?? 'Unknown';
 
-                return FutureBuilder<String>(
-                  future: fetchUserName(contactId),
-                  builder: (context, nameSnapshot) {
-                    final displayName = nameSnapshot.data ?? contactId;
+                return StreamBuilder<DatabaseEvent>(
+                  stream: _userChatsRef.child(currentUserId).child(userId).onValue,
+                  builder: (context, chatSnapshot) {
+                    String lastMessage = 'No messages yet';
+
+                    if (chatSnapshot.hasData && chatSnapshot.data!.snapshot.value != null) {
+                      final data = chatSnapshot.data!.snapshot.value as Map;
+                      lastMessage = data['lastMessage'] ?? 'No messages yet';
+                    }
 
                     return ListTile(
                       leading: CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(displayName, style: TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Text(
-                        lastMessage,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
+                      title: Text(name, style: TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(lastMessage, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
                       trailing: Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         Navigator.push(
@@ -69,7 +60,7 @@ class ChatContactsScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => ChatScreen(
                               currentUserId: currentUserId,
-                              otherUserId: contactId,
+                              otherUserId: userId,
                             ),
                           ),
                         );
@@ -77,12 +68,13 @@ class ChatContactsScreen extends StatelessWidget {
                     );
                   },
                 );
+
               },
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text("Error loading chats"));
+            return Center(child: Text("Error loading users"));
           } else {
-            return Center(child: Text("No chats yet"));
+            return Center(child: Text("No users found"));
           }
         },
       ),

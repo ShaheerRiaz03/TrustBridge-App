@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:course_project/Add%20Product%20Page.dart';
 import 'package:course_project/Seller%20Add%20Services.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,31 @@ class SellerHomePage extends StatefulWidget {
 }
 
 class _SellerHomePageState extends State<SellerHomePage> {
+
+  Future<void> _loadProfilePicFromWeb() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseDatabase.instance
+        .ref('users/${user.uid}/ProfilePic')
+        .get();
+
+    if (snapshot.exists && snapshot.value is String) {
+      final base64Image = snapshot.value as String;
+
+      try {
+        final bytes = base64Decode(base64Image);
+
+        // Save it as a data URL to show directly in NetworkImage
+        setState(() {
+          profileImageUrl = 'data:image/png;base64,$base64Image';
+        });
+      } catch (e) {
+        debugPrint("❌ Failed to decode profile image: $e");
+      }
+    }
+  }
+
 
   Future<String> getUserNameFromRealtimeDB() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -51,6 +78,7 @@ String userName ="";
     super.initState();
     fetchSellerItems();
     fetchUserName();
+    _loadProfilePicFromWeb();
   }
 
   void fetchSellerItems() async {
@@ -99,11 +127,10 @@ String userName ="";
                 children: [
                   CircleAvatar(
                     radius: 25,
-                    backgroundImage:
-                    profileImageUrl != null ? NetworkImage(profileImageUrl!) : null,
-                    child: profileImageUrl == null
-                        ? const Icon(Icons.person, size: 30)
-                        : null,
+                    backgroundImage: (profileImageUrl != null && profileImageUrl!.startsWith('data:image'))
+                        ? MemoryImage(base64Decode(profileImageUrl!.split(',').last))
+                        : NetworkImage(profileImageUrl!) as ImageProvider,
+                    child: profileImageUrl == null ? const Icon(Icons.person, size: 30) : null,
                   ),
                   const SizedBox(width: 12),
                   Text('Hi $userName',

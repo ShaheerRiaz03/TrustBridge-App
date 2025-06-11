@@ -1,19 +1,9 @@
-// logout_helper.dart
 import 'package:course_project/Log%20in%20Page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 
 class LogoutHelper {
   static Future<void> logout(BuildContext context) async {
-    final dbref = FirebaseDatabase.instance.ref().child("logout");
-    final user = FirebaseAuth.instance.currentUser;
-
-    await dbref.push().set({
-      "uid": user?.uid,
-      "timestamp": DateTime.now().toIso8601String(),
-    });
-
     try {
       await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushAndRemoveUntil(
@@ -43,7 +33,7 @@ class LogoutHelper {
               Navigator.of(ctx).pop();
               logout(context);
             },
-            child: const Text("Logout",style: TextStyle(color: Colors.red),),
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
