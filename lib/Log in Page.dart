@@ -3,20 +3,25 @@ import 'package:course_project/Bottom%20Navigation%20Bar%20page.dart';
 import 'package:course_project/Compound%20Materials/Compound%20Color.dart';
 import 'package:course_project/Sign%20Up%20Page.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
+
 }
 
 class _LoginState extends State<Login> {
+
   bool _obscureText = false;
   final email =TextEditingController();
   final pass= TextEditingController();
+
   @override
   Widget build(BuildContext context) {
+
 
     final screensize= MediaQuery.of(context).size;
     final screenHeight = screensize.height;
@@ -102,17 +107,23 @@ class _LoginState extends State<Login> {
                       onTap: () async {
                         String emailInput = email.text.trim();
                         String passInput = pass.text;
-            
+
                         String? error = await AuthService().login(emailInput, passInput);
                         if (error != null) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
                         } else {
-                          Navigator.push(
+                          // Save login state here
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool('isLoggedIn', true);
+
+                          // Navigate to bottom nav page
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => bottomnavigation()),
                           );
                         }
                       },
+
                       splashColor: Appcolors.Splash,
                       borderRadius: BorderRadius.circular(10),
                       child: Ink(
@@ -133,9 +144,26 @@ class _LoginState extends State<Login> {
                   ),
             
                   SizedBox(height: screenHeight * 0.02),
-                  InkWell(onTap: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Createacc()));
+                  InkWell(onTap: () async {
+                    String emailInput = email.text.trim();
+                    String passInput = pass.text;
+
+                    String? error = await AuthService().login(emailInput, passInput);
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                    } else {
+                      // Save login state
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('isLoggedIn', true);
+
+                      // Navigate and replace login page
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => bottomnavigation()),
+                      );
+                    }
                   },
+
                     splashColor: Colors.grey.shade400,
                     child: Container(height: 60,width: 350,padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(

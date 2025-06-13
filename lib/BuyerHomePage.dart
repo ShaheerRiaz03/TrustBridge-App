@@ -308,8 +308,6 @@ class _BuyerhomepageState extends State<Buyerhomepage> {
 
               const SizedBox(height: 24),
 
-              /// Link Submission Section
-              SubmitLinkSection(),
             ],
           ),
         ),
